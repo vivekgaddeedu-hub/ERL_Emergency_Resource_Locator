@@ -1,0 +1,11 @@
+# Ignore the Expo app during Vercel builds to prevent native-module TypeScript errors
+expo-app/
+
+# Optional: ignore local dev artifacts
+.expo/
+expo-app/node_modules/
+.DS_Store
+node_modules/
+coverage/
+dist/
+build/
