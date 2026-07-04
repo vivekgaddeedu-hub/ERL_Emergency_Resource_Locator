@@ -19,9 +19,9 @@ export default defineConfig({
   webServer: process.env.PLAYWRIGHT_NO_SERVER
     ? undefined
     : {
-        command: "npm run start",
+        command: process.env.PLAYWRIGHT_WEB_SERVER_COMMAND ?? "npm run dev -- --hostname 127.0.0.1 --port 3000",
         port: 3000,
-        timeout: 120_000,
+        timeout: 180_000,
         reuseExistingServer: !process.env.CI,
       },
 });
