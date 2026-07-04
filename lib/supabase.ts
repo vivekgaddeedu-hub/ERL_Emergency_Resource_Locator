@@ -1,0 +1,25 @@
+/**
+ * Optional Supabase client. The app works *without* Supabase configured —
+ * it falls back to a local Overpass API query and a localStorage contact
+ * store. This module just creates the client when env vars are present.
+ */
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+
+let cached: SupabaseClient | null = null;
+
+export function getSupabase(): SupabaseClient | null {
+  if (cached) return cached;
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!url || !anon) return null;
+  cached = createClient(url, anon, {
+    auth: { persistSession: true, autoRefreshToken: true },
+  });
+  return cached;
+}
+
+export const isSupabaseConfigured = (): boolean => {
+  return Boolean(
+    process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  );
+};
