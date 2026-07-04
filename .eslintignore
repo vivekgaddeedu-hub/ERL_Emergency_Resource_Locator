@@ -1,0 +1,8 @@
+# Ignore Expo app during root linting
+expo-app/
+
+# Ignore build artifacts
+node_modules/
+.next/
+.vercel/
+.DS_Store
