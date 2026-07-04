@@ -95,11 +95,11 @@ export default function ResourcesScreen() {
 
       <Card className="overflow-hidden p-0">
         <div className="h-64 w-full">
-          <Map origin={coordinates} units={units} highlightId={topUnit?.id} className="h-full w-full" />
+          <Map origin={coordinates} units={displayedUnits} highlightId={topUnit?.id} className="h-full w-full" />
         </div>
         <div className="flex items-center justify-between border-t border-border p-4 text-xs text-muted">
           <span>{locating ? "Locating…" : locError ?? "Live position"}</span>
-          <Badge variant="green">{units.length} found</Badge>
+          <Badge variant="green">{displayedUnits.length} found</Badge>
         </div>
       </Card>
 
