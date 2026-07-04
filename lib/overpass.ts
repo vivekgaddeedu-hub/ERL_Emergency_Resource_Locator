@@ -4,16 +4,12 @@
 
 import type { Coordinates, EmergencyType, EmergencyUnit } from "@/types/emergency";
 
-const OVERPASS_ENDPOINT = "https://overpass-api.de/api/interpreter";
+const NOMINATIM_ENDPOINT = "https://nominatim.openstreetmap.org/search";
 
-/**
- * Maps our internal EmergencyType to one or more OSM amenity tags.
- * Order matters: we take the first non-empty match per category.
- */
-const TAG_MAP: Record<EmergencyType, string[]> = {
-  hospital: ["amenity=hospital", "amenity=clinic", "amenity=doctors"],
-  police: ["amenity=police"],
-  fire: ["amenity=fire_station"],
+const QUERY_MAP: Record<EmergencyType, string> = {
+  hospital: "hospital",
+  police: "police station",
+  fire: "fire station",
 };
 
 type OverpassElement = {
@@ -29,28 +25,56 @@ type OverpassResponse = {
   elements: OverpassElement[];
 };
 
-function fallbackFacilities(coord: Coordinates, type: EmergencyType): EmergencyUnit[] {
-  const labels: Record<EmergencyType, string> = {
-    hospital: "Demo Hospital",
-    police: "Demo Police Station",
-    fire: "Demo Fire Station",
-  };
-  const offsets: Record<EmergencyType, [number, number]> = {
-    hospital: [0.0085, -0.005],
-    police: [-0.007, 0.006],
-    fire: [0.005, 0.007],
-  };
-  const [latOffset, lonOffset] = offsets[type];
+type NominatimResult = {
+  place_id?: number;
+  lat?: string;
+  lon?: string;
+  name?: string;
+  display_name?: string;
+};
 
-  return [
-    {
-      id: `fallback-${type}`,
-      name: `${labels[type]} (demo)`,
+type NominatimResponse = NominatimResult[];
+
+function buildViewBox(coord: Coordinates, radiusMeters: number): string {
+  const metersPerDegreeLat = 111_320;
+  const latDelta = Math.max(0.02, Math.min(0.2, radiusMeters / metersPerDegreeLat));
+  const lonDelta = Math.max(
+    0.02,
+    Math.min(0.2, radiusMeters / (111_320 * Math.cos((coord.latitude * Math.PI) / 180)))
+  );
+
+  return `${coord.longitude - lonDelta},${coord.latitude + latDelta},${coord.longitude + lonDelta},${coord.latitude - latDelta}`;
+}
+
+function parseOverpassResponse(data: OverpassResponse, type: EmergencyType): EmergencyUnit[] {
+  return data.elements
+    .map((el) => {
+      const lat = el.lat ?? el.center?.lat;
+      const lon = el.lon ?? el.center?.lon;
+      if (typeof lat !== "number" || typeof lon !== "number") return null;
+      return {
+        id: `${el.type}-${el.id}`,
+        name: el.tags?.name ?? `${type[0].toUpperCase()}${type.slice(1)} #${el.id}`,
+        type,
+        latitude: lat,
+        longitude: lon,
+      } satisfies EmergencyUnit;
+    })
+    .filter((u): u is EmergencyUnit => u !== null);
+}
+
+function parseNominatimResponse(data: NominatimResponse, type: EmergencyType): EmergencyUnit[] {
+  return data
+    .filter((item) => item.lat && item.lon)
+    .slice(0, 8)
+    .map((item) => ({
+      id: `${type}-${item.place_id ?? item.lat ?? item.lon}`,
+      name: item.name ?? item.display_name?.split(",")[0] ?? `${type[0].toUpperCase()}${type.slice(1)} nearby`,
       type,
-      latitude: coord.latitude + latOffset,
-      longitude: coord.longitude + lonOffset,
-    },
-  ];
+      latitude: Number(item.lat),
+      longitude: Number(item.lon),
+    }))
+    .filter((unit) => Number.isFinite(unit.latitude) && Number.isFinite(unit.longitude));
 }
 
 export async function fetchNearbyFacilities(
@@ -59,37 +83,35 @@ export async function fetchNearbyFacilities(
   radiusMeters = 8000,
   limit = 10
 ): Promise<EmergencyUnit[]> {
-  const tagFilters = TAG_MAP[type]
-    .map((t) => `node[${t}](around:${radiusMeters},${coord.latitude},${coord.longitude});`)
-    .join("");
-
-  const query = `[out:json][timeout:12];(${tagFilters});out ${limit};`;
+  const query = QUERY_MAP[type];
+  const searchUrl = new URL(NOMINATIM_ENDPOINT);
+  searchUrl.searchParams.set("format", "jsonv2");
+  searchUrl.searchParams.set("q", query);
+  searchUrl.searchParams.set("limit", String(limit));
+  searchUrl.searchParams.set("viewbox", buildViewBox(coord, radiusMeters));
+  searchUrl.searchParams.set("bounded", "1");
+  searchUrl.searchParams.set("addressdetails", "1");
 
   try {
-    const res = await fetch(OVERPASS_ENDPOINT, {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: new URLSearchParams({ data: query }).toString(),
+    const res = await fetch(searchUrl.toString(), {
+      headers: { "Accept-Language": "en", "User-Agent": "ERL/1.0" },
     });
+
     if (!res.ok) {
-      // Overpass often 429s under load; fail gracefully with no units.
       return [];
     }
-    const data = (await res.json()) as OverpassResponse;
-    return data.elements
-      .map((el) => {
-        const lat = el.lat ?? el.center?.lat;
-        const lon = el.lon ?? el.center?.lon;
-        if (typeof lat !== "number" || typeof lon !== "number") return null;
-        return {
-          id: `${type}-${el.id}`,
-          name: el.tags?.name ?? `${type[0].toUpperCase()}${type.slice(1)} #${el.id}`,
-          type,
-          latitude: lat,
-          longitude: lon,
-        } satisfies EmergencyUnit;
-      })
-      .filter((u): u is EmergencyUnit => u !== null);
+
+    const data = (await res.json()) as NominatimResponse | OverpassResponse | unknown;
+    if (Array.isArray(data)) {
+      return parseNominatimResponse(data, type);
+    }
+
+    if (data && typeof data === "object" && "elements" in data) {
+      const overpassData = data as OverpassResponse;
+      return parseOverpassResponse(overpassData, type);
+    }
+
+    return [];
   } catch {
     return [];
   }

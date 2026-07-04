@@ -52,37 +52,9 @@ export default function ResourcesScreen() {
     return cleanup;
   }, [coordinates, load]);
 
-  const displayedUnits = useMemo<EmergencyUnit[]>(() => {
-    if (!coordinates || resolving || locating || units.length > 0) {
-      return units;
-    }
-
-    const offsetMap: Record<EmergencyType, [number, number]> = {
-      hospital: [0.007, -0.005],
-      police: [-0.006, 0.007],
-      fire: [0.005, 0.006],
-    };
-    const [latOffset, lonOffset] = offsetMap[activeType];
-
-    return [
-      {
-        id: `fallback-${activeType}`,
-        name:
-          activeType === "hospital"
-            ? "Demo Hospital"
-            : activeType === "police"
-            ? "Demo Police Station"
-            : "Demo Fire Station",
-        type: activeType,
-        latitude: coordinates.latitude + latOffset,
-        longitude: coordinates.longitude + lonOffset,
-      },
-    ];
-  }, [coordinates, units, activeType, resolving, locating]);
-
   const results: ETAResult[] = useMemo(
-    () => (coordinates ? rankUnits(coordinates, displayedUnits) : []),
-    [coordinates, displayedUnits]
+    () => (coordinates ? rankUnits(coordinates, units) : []),
+    [coordinates, units]
   );
   const topUnit = results[0]?.unit;
 
@@ -95,11 +67,11 @@ export default function ResourcesScreen() {
 
       <Card className="overflow-hidden p-0">
         <div className="h-64 w-full">
-          <Map origin={coordinates} units={displayedUnits} highlightId={topUnit?.id} className="h-full w-full" />
+          <Map origin={coordinates} units={units} highlightId={topUnit?.id} className="h-full w-full" />
         </div>
         <div className="flex items-center justify-between border-t border-border p-4 text-xs text-muted">
           <span>{locating ? "Locating…" : locError ?? "Live position"}</span>
-          <Badge variant="green">{displayedUnits.length} found</Badge>
+          <Badge variant="green">{units.length} found</Badge>
         </div>
       </Card>
 
