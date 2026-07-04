@@ -29,6 +29,30 @@ type OverpassResponse = {
   elements: OverpassElement[];
 };
 
+function fallbackFacilities(coord: Coordinates, type: EmergencyType): EmergencyUnit[] {
+  const labels: Record<EmergencyType, string> = {
+    hospital: "Demo Hospital",
+    police: "Demo Police Station",
+    fire: "Demo Fire Station",
+  };
+  const offsets: Record<EmergencyType, [number, number]> = {
+    hospital: [0.0085, -0.005],
+    police: [-0.007, 0.006],
+    fire: [0.005, 0.007],
+  };
+  const [latOffset, lonOffset] = offsets[type];
+
+  return [
+    {
+      id: `fallback-${type}`,
+      name: `${labels[type]} (demo)`,
+      type,
+      latitude: coord.latitude + latOffset,
+      longitude: coord.longitude + lonOffset,
+    },
+  ];
+}
+
 export async function fetchNearbyFacilities(
   coord: Coordinates,
   type: EmergencyType,
@@ -48,11 +72,11 @@ export async function fetchNearbyFacilities(
       body: new URLSearchParams({ data: query }).toString(),
     });
     if (!res.ok) {
-      // Overpass often 429s under load; return empty list so UI degrades gracefully.
-      return [];
+      // Overpass often 429s under load; return a small demo fallback list.
+      return fallbackFacilities(coord, type);
     }
     const data = (await res.json()) as OverpassResponse;
-    return data.elements
+    const facilities = data.elements
       .map((el) => {
         const lat = el.lat ?? el.center?.lat;
         const lon = el.lon ?? el.center?.lon;
@@ -66,7 +90,9 @@ export async function fetchNearbyFacilities(
         } satisfies EmergencyUnit;
       })
       .filter((u): u is EmergencyUnit => u !== null);
+
+    return facilities.length > 0 ? facilities : fallbackFacilities(coord, type);
   } catch {
-    return [];
+    return fallbackFacilities(coord, type);
   }
 }

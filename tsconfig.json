@@ -24,5 +24,5 @@
     "types": ["node", "vitest/globals", "@testing-library/jest-dom"]
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
-  "exclude": ["node_modules", ".next", "coverage", "playwright-report", "test-results", "expo-app"]
+  "exclude": ["node_modules", ".next", "coverage", "playwright-report", "test-results", "expo-app", "ERL"]
 }

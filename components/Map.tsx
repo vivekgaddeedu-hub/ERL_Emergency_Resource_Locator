@@ -109,5 +109,11 @@ export function Map({ origin, units, highlightId, className }: MapProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [origin?.latitude, origin?.longitude, units, highlightId]);
 
-  return <div ref={containerRef} className={className} aria-label="Nearby emergency resources" />;
+  return (
+    <div
+      ref={containerRef}
+      className={className ?? "h-full w-full"}
+      aria-label="Nearby emergency resources"
+    />
+  );
 }

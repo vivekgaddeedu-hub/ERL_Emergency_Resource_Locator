@@ -103,7 +103,7 @@ export default function EmergencyScreen() {
 
       <Card className="overflow-hidden p-0">
         <div className="h-56 w-full">
-          <Map origin={coordinates} units={units.slice(0, 6)} highlightId={topUnit?.unit.id} />
+          <Map origin={coordinates} units={units.slice(0, 6)} highlightId={topUnit?.unit.id} className="h-full w-full" />
         </div>
         {topUnit ? (
           <div className="flex items-center justify-between gap-3 p-4">
