@@ -29,28 +29,36 @@ export default function TabsLayout() {
           name="index"
           options={{
             title: "Emergency",
-            tabBarIcon: ({ color }) => <Heart size={22} color={color} />,
+            tabBarIcon: ({ color }: { color?: string }) => (
+              <Heart size={22} color={color} />
+            ),
           }}
         />
         <Tabs.Screen
           name="resources"
           options={{
             title: "Nearby",
-            tabBarIcon: ({ color }) => <MapIcon size={22} color={color} />,
+            tabBarIcon: ({ color }: { color?: string }) => (
+              <MapIcon size={22} color={color} />
+            ),
           }}
         />
         <Tabs.Screen
           name="family"
           options={{
             title: "Family",
-            tabBarIcon: ({ color }) => <Users size={22} color={color} />,
+            tabBarIcon: ({ color }: { color?: string }) => (
+              <Users size={22} color={color} />
+            ),
           }}
         />
         <Tabs.Screen
           name="voice"
           options={{
             title: "Voice",
-            tabBarIcon: ({ color }) => <Mic size={22} color={color} />,
+            tabBarIcon: ({ color }: { color?: string }) => (
+              <Mic size={22} color={color} />
+            ),
           }}
         />
       </Tabs>
