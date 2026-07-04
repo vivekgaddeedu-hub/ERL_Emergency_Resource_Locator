@@ -52,9 +52,37 @@ export default function ResourcesScreen() {
     return cleanup;
   }, [coordinates, load]);
 
+  const displayedUnits = useMemo<EmergencyUnit[]>(() => {
+    if (!coordinates || resolving || locating || units.length > 0) {
+      return units;
+    }
+
+    const offsetMap: Record<EmergencyType, [number, number]> = {
+      hospital: [0.007, -0.005],
+      police: [-0.006, 0.007],
+      fire: [0.005, 0.006],
+    };
+    const [latOffset, lonOffset] = offsetMap[activeType];
+
+    return [
+      {
+        id: `fallback-${activeType}`,
+        name:
+          activeType === "hospital"
+            ? "Demo Hospital"
+            : activeType === "police"
+            ? "Demo Police Station"
+            : "Demo Fire Station",
+        type: activeType,
+        latitude: coordinates.latitude + latOffset,
+        longitude: coordinates.longitude + lonOffset,
+      },
+    ];
+  }, [coordinates, units, activeType, resolving, locating]);
+
   const results: ETAResult[] = useMemo(
-    () => (coordinates ? rankUnits(coordinates, units) : []),
-    [coordinates, units]
+    () => (coordinates ? rankUnits(coordinates, displayedUnits) : []),
+    [coordinates, displayedUnits]
   );
   const topUnit = results[0]?.unit;
 

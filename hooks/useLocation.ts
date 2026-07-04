@@ -78,7 +78,7 @@ export function useLocation(
     }
 
     return () => {
-      if (watchId !== null) {
+      if (watchId !== null && navigator.geolocation?.clearWatch) {
         navigator.geolocation.clearWatch(watchId);
       }
     };

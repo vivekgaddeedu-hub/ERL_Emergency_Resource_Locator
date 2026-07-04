@@ -72,11 +72,11 @@ export async function fetchNearbyFacilities(
       body: new URLSearchParams({ data: query }).toString(),
     });
     if (!res.ok) {
-      // Overpass often 429s under load; return a small demo fallback list.
-      return fallbackFacilities(coord, type);
+      // Overpass often 429s under load; fail gracefully with no units.
+      return [];
     }
     const data = (await res.json()) as OverpassResponse;
-    const facilities = data.elements
+    return data.elements
       .map((el) => {
         const lat = el.lat ?? el.center?.lat;
         const lon = el.lon ?? el.center?.lon;
@@ -90,9 +90,7 @@ export async function fetchNearbyFacilities(
         } satisfies EmergencyUnit;
       })
       .filter((u): u is EmergencyUnit => u !== null);
-
-    return facilities.length > 0 ? facilities : fallbackFacilities(coord, type);
   } catch {
-    return fallbackFacilities(coord, type);
+    return [];
   }
 }
