@@ -1,0 +1,55 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Leaflet CSS is loaded from the layout via <link>, so we don't @import it here. */
+
+@layer base {
+  :root {
+    --background: 13 13 13;
+    --foreground: 241 250 238;
+    --emergency: 230 57 70;
+    --green: 61 220 151;
+    --amber: 244 162 97;
+    --navy: 29 53 87;
+    --muted: 142 142 147;
+    --border: 31 31 31;
+  }
+
+  html,
+  body {
+    background-color: #0D0D0D;
+    color: #F1FAEE;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    min-height: 100%;
+  }
+
+  body {
+    font-family: var(--font-inter), system-ui, sans-serif;
+  }
+
+  ::selection {
+    background: rgba(230, 57, 70, 0.4);
+    color: #F1FAEE;
+  }
+}
+
+@layer utilities {
+  .text-shadow-glow {
+    text-shadow: 0 0 12px rgba(230, 57, 70, 0.45);
+  }
+}
+
+/* Leaflet attribution control hidden — we surface attribution via the layout footer */
+.leaflet-control-attribution {
+  display: none !important;
+}
+
+/* Subtle container background gradient that matches the native Android emergency screen */
+.bg-emergency-shell {
+  background:
+    radial-gradient(circle at 50% 0%, rgba(230, 57, 70, 0.18), transparent 60%),
+    radial-gradient(circle at 50% 100%, rgba(29, 53, 87, 0.18), transparent 60%),
+    #0D0D0D;
+}
