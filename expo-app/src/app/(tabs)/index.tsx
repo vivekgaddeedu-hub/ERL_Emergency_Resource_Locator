@@ -3,6 +3,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { MapPin, RefreshCcw, Hospital as HospitalIcon } from "lucide-react-native";
 import { useEffect, useMemo, useState, useCallback } from "react";
 import { useRouter } from "expo-router";
+import { Linking, Platform } from "react-native";
 import { SOSButton } from "@/components/SOSButton";
 import { EmergencyNumber } from "@/components/EmergencyNumber";
 import { Card } from "@/components/ui/card";
@@ -133,7 +134,45 @@ export default function EmergencyScreen() {
               <Badge variant={resolving ? "amber" : "green"}>
                 {resolving ? "Resolving responders…" : "Live"}
               </Badge>
-              <SOSButton onTrigger={() => router.push("/resources")} />
+              <SOSButton
+                onTrigger={async () => {
+                  const TEST_NUMBERS = [
+                    "9121783185",
+                    "7981312679",
+                    "9381646146",
+                    "9392679623",
+                  ];
+                  const msg = `EMERGENCY — need assistance. My location: ${coordinates?.latitude ?? "unknown"}, ${coordinates?.longitude ?? "unknown"}`;
+                  try {
+                    // Try to use expo-sms if available
+                    // dynamic import so build doesn't fail when package isn't installed
+                    // eslint-disable-next-line @typescript-eslint/no-var-requires
+                    const SMS = await import("expo-sms");
+                    if (SMS && SMS.isAvailableAsync) {
+                      const available = await SMS.isAvailableAsync();
+                      if (available) {
+                        await SMS.sendSMSAsync(TEST_NUMBERS, msg);
+                      } else {
+                        const smsUrl = `sms:${TEST_NUMBERS.join(",")}${Platform.OS === "ios" ? "&" : "?"}body=${encodeURIComponent(msg)}`;
+                        await Linking.openURL(smsUrl);
+                      }
+                    } else {
+                      const smsUrl = `sms:${TEST_NUMBERS.join(",")}${Platform.OS === "ios" ? "&" : "?"}body=${encodeURIComponent(msg)}`;
+                      await Linking.openURL(smsUrl);
+                    }
+                  } catch (e) {
+                    // Fallback to Linking which opens the SMS app with prefilled message
+                    try {
+                      const smsUrl = `sms:${TEST_NUMBERS.join(",")}${Platform.OS === "ios" ? "&" : "?"}body=${encodeURIComponent(msg)}`;
+                      await Linking.openURL(smsUrl);
+                    } catch (err) {
+                      console.warn("Unable to open SMS composer:", err);
+                    }
+                  }
+                  // Navigate to resources view after sending
+                  router.push("/resources");
+                }}
+              />
             </Card>
 
             <Card style={{ padding: 0, overflow: "hidden" }}>
