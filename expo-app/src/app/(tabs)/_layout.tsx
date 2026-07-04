@@ -1,5 +1,5 @@
 import { Tabs } from "expo-router";
-import { Heart, Users, Mic, Map } from "lucide-react-native";
+import { Heart, Users, Mic, Map as MapIcon } from "lucide-react-native";
 import { StatusBar } from "expo-status-bar";
 
 export default function TabsLayout() {
@@ -36,7 +36,7 @@ export default function TabsLayout() {
           name="resources"
           options={{
             title: "Nearby",
-            tabBarIcon: ({ color }) => <Map size={22} color={color} />,
+            tabBarIcon: ({ color }) => <MapIcon size={22} color={color} />,
           }}
         />
         <Tabs.Screen
